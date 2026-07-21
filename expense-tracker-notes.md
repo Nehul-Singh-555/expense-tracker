@@ -1096,3 +1096,462 @@ Java Version Mismatch
 → HTTP 404
 
 Always trace symptoms back to the root cause.
+
+# Session 13 - Layered Architecture
+
+A Spring Boot application is divided into layers.
+
+## Controller
+
+Responsibilities:
+
+- Receives HTTP requests.
+- Calls the service layer.
+- Returns HTTP responses.
+
+The controller should not contain business logic.
+
+---
+
+## Service
+
+Responsibilities:
+
+- Contains business logic.
+- Performs validation.
+- Applies business rules.
+- Coordinates multiple repositories if required.
+
+The service decides **what** should happen.
+
+---
+
+## Repository
+
+Responsibilities:
+
+- Communicates with the database.
+- Performs CRUD operations.
+- Does not contain business logic.
+
+The repository knows **how** to perform database operations.
+
+---
+
+## Typical Request Flow
+
+Browser
+
+↓
+
+Controller
+
+↓
+
+Service
+
+↓
+
+Repository
+
+↓
+
+Database
+
+Each layer has a single responsibility, making the application easier to maintain, test, and extend.
+
+# Session 14 - Essential Git Commands
+
+## 1. Check Repository Status
+
+```bash
+git status
+```
+
+Shows the current state of the repository.
+
+Use it frequently.
+
+---
+
+## 2. View Changes
+
+```bash
+git diff
+```
+
+Displays the exact changes made since the last commit.
+
+---
+
+## 3. Stage Files
+
+```bash
+git add .
+```
+
+Stages all modified files for the next commit.
+
+---
+
+## 4. Create a Commit
+
+```bash
+git commit -m "Meaningful commit message"
+```
+
+Creates a snapshot of the staged changes.
+
+Commits are local.
+
+---
+
+## 5. Push to GitHub
+
+```bash
+git push
+```
+
+Uploads local commits to the remote repository.
+
+---
+
+## 6. Pull from GitHub
+
+```bash
+git pull
+```
+
+Downloads the latest changes from the remote repository.
+
+---
+
+## 7. View Commit History
+
+```bash
+git log --oneline
+```
+
+Shows a compact list of commits.
+
+---
+
+## 8. View Remote Repositories
+
+```bash
+git remote -v
+```
+
+Displays the configured remote repositories.
+
+---
+
+## Recommended Workflow
+
+```text
+Code
+↓
+
+git status
+
+↓
+
+git diff
+
+↓
+
+git add .
+
+↓
+
+git commit -m "Meaningful message"
+
+↓
+
+git push
+```
+
+# Session 15 - Why the Service Layer Exists
+
+The Service layer contains the application's business logic.
+
+Controllers should not contain business logic.
+
+## Problems if all logic is inside the Controller
+
+1. The controller has too many responsibilities.
+2. Debugging becomes more difficult.
+3. The project becomes harder to understand for other developers.
+4. Business logic cannot be easily reused.
+5. The controller becomes very large and difficult to maintain.
+
+---
+
+## Responsibilities
+
+### Controller
+
+- Receives HTTP requests.
+- Calls the service.
+- Returns HTTP responses.
+
+### Service
+
+- Contains business logic.
+- Performs validation.
+- Applies business rules.
+- Coordinates repositories.
+- Reuses logic across multiple controllers.
+
+# Session 16 - Dependency Injection (Introduction)
+
+## Without Spring
+
+Objects are created manually.
+
+```java
+ExpenseService expenseService = new ExpenseService();
+```
+
+The programmer is responsible for creating and managing objects.
+
+---
+
+## With Spring
+
+Objects are created automatically by Spring.
+
+Spring manages the lifecycle of these objects (called Beans).
+
+Classes annotated with stereotypes such as:
+
+- `@RestController`
+- `@Service`
+- `@Repository`
+
+are detected during startup, and Spring creates their objects automatically.
+
+This mechanism is called **Dependency Injection (DI)**.
+
+Instead of creating dependencies manually, Spring injects them where required.
+
+# Session 17 - Constructor Injection
+
+Declaring a variable does **not** create an object.
+
+Example:
+
+```java
+private ExpenseService expenseService;
+```
+
+This only declares a reference.
+
+Spring must provide the object.
+
+The recommended approach is **Constructor Injection**.
+
+```java
+@RestController
+public class ExpenseController {
+
+    private final ExpenseService expenseService;
+
+    public ExpenseController(ExpenseService expenseService) {
+        this.expenseService = expenseService;
+    }
+}
+```
+
+During application startup:
+
+1. Spring creates an `ExpenseService` object.
+2. Spring creates an `ExpenseController`.
+3. Spring passes the `ExpenseService` object to the controller's constructor.
+4. The controller can now use `expenseService`.
+
+Constructor Injection is the recommended way to inject dependencies in modern Spring Boot applications.
+
+# Session 17 - Dependency Injection (Deep Dive)
+
+## Dependency
+
+A dependency is another object that a class needs to do its work.
+
+Example:
+
+- ExpenseController depends on ExpenseService.
+- ExpenseService depends on ExpenseRepository.
+
+---
+
+## Without Dependency Injection
+
+```java
+ExpenseService expenseService = new ExpenseService();
+```
+
+The class creates its own dependency.
+
+This creates tight coupling.
+
+---
+
+## With Dependency Injection
+
+```java
+private final ExpenseService expenseService;
+
+public ExpenseController(ExpenseService expenseService) {
+    this.expenseService = expenseService;
+}
+```
+
+The controller does not create the service.
+
+Spring provides it through the constructor.
+
+---
+
+## Why Constructor Injection?
+
+- Recommended by Spring.
+- Makes dependencies explicit.
+- Works well with `final` fields.
+- Improves testability.
+- Promotes loose coupling.
+
+---
+
+## Request Flow
+
+Browser
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Database
+
+Spring automatically connects the layers by injecting the required objects.
+
+# Session 18 - Spring Beans and Singleton Scope
+
+## Bean
+
+A Bean is an object that is created and managed by Spring.
+
+Examples:
+
+- `ExpenseController`
+- `ExpenseService`
+- `ExpenseRepository`
+
+---
+
+## Spring Container
+
+The Spring Container stores all the Beans created during application startup.
+
+When one Bean depends on another, Spring provides the existing Bean instead of creating a new one.
+
+---
+
+## Singleton Scope (Default)
+
+By default, Spring creates **one instance** of each Bean.
+
+Example:
+
+```
+ExpenseService Bean
+        ▲
+        │
+ ┌──────┴──────┐
+ │             │
+ ▼             ▼
+ExpenseController   ReportController
+```
+
+Both controllers share the same `ExpenseService` object.
+
+---
+
+## Why Singleton?
+
+- Saves memory.
+- Faster startup and execution.
+- Centralized object management.
+
+---
+
+## Best Practice
+
+Service classes should generally be **stateless**.
+
+Do not store request-specific data in instance variables.
+
+Keep business logic inside methods.
+
+# Session 19 - The `final` Keyword
+
+## What does `final` mean?
+
+A `final` variable can only be assigned once.
+
+Example:
+
+```java
+final String name = "Nehul";
+```
+
+This is allowed:
+
+```java
+System.out.println(name);
+```
+
+This is **not** allowed:
+
+```java
+name = "Rahul";
+```
+
+---
+
+## `final` with Objects
+
+```java
+final ExpenseService expenseService = new ExpenseService();
+```
+
+The reference cannot point to another object.
+
+This is **not** allowed:
+
+```java
+expenseService = new ExpenseService();
+```
+
+However, calling methods is allowed:
+
+```java
+expenseService.addExpense();
+```
+
+---
+
+## Why use `final` in Spring Boot?
+
+- Ensures dependencies are initialized once.
+- Prevents accidental reassignment.
+- Makes code safer and easier to understand.
+- Works naturally with Constructor Injection.
+
+Most Spring Boot projects use:
+
+```java
+private final ExpenseService expenseService;
+```
