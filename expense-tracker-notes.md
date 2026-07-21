@@ -1555,3 +1555,39 @@ Most Spring Boot projects use:
 ```java
 private final ExpenseService expenseService;
 ```
+
+# Session 20 - Why Controllers Still Contain Code
+
+The controller is responsible for handling HTTP requests.
+
+Responsibilities of a controller:
+
+- Receive HTTP requests.
+- Map URLs to Java methods.
+- Call the appropriate service.
+- Return the response.
+
+Example:
+
+```java
+@PostMapping
+public String addExpense() {
+    return expenseService.addExpense();
+}
+```
+
+This is **not** business logic.
+
+The controller is only forwarding the request.
+
+Business logic belongs in the Service layer.
+
+Example of business logic:
+
+- Validate input.
+- Apply business rules.
+- Calculate values.
+- Call the repository.
+- Return the result.
+
+Keeping controllers thin improves readability, maintainability, and debugging.
